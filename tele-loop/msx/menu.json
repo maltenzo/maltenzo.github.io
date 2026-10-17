@@ -1,0 +1,21 @@
+{
+  "headline": "Tele Loop",
+  "menu": [
+    {
+      "label": "Reproductor web (loop + auto-update)",
+      "data": {
+        "type": "list",
+        "items": [
+          {
+            "title": "Abrir reproductor",
+            "action": "link:https://maltenzo.github.io/"
+          },
+          {
+            "title": "Video directo (fallback, sin auto-update)",
+            "action": "video:https://pub-7002b011b41644fe845004f71bc1c604.r2.dev/Anuncios.mp4"
+          }
+        ]
+      }
+    }
+  ]
+}
