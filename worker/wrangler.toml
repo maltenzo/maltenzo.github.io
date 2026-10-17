@@ -1,0 +1,10 @@
+name = "tele-loop"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+
+[vars]
+PUBLIC_URL = "https://pub-7002b011b41644fe845004f71bc1c604.r2.dev"
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "renuevo-de-vida"
