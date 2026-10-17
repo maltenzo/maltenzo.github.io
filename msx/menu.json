@@ -8,7 +8,7 @@
         "items": [
           {
             "title": "Abrir reproductor",
-            "action": "link:https://maltenzo.github.io/tele-loop/"
+            "action": "link:https://maltenzo.github.io/"
           },
           {
             "title": "Video directo (fallback, sin auto-update)",
