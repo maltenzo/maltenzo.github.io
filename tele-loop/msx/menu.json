@@ -5,6 +5,7 @@
       "label": "Reproductor web (loop + auto-update)",
       "data": {
         "type": "list",
+        "template": { "type": "separate", "layout": "0,0,12,1", "color": "msx-glass" },
         "items": [
           {
             "title": "Abrir reproductor",
