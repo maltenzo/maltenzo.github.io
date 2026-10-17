@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tele Loop</title>
+<style>
+  html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; cursor: none; }
+  video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; background: #000; }
+  #status { position: absolute; bottom: 12px; left: 12px; color: #888; font: 14px sans-serif; display: none; }
+</style>
+</head>
+<body>
+<video id="v" autoplay muted loop playsinline preload="auto"></video>
+<div id="status"></div>
+
+<script>
+// ES5 a propósito: los navegadores de las teles suelen ser viejos.
+(function () {
+  var CONFIG_URL = 'config.json';
+  var POLL_MS = 60 * 1000;      // cada cuánto chequea si cambió el video
+  var RETRY_MS = 15 * 1000;     // reintento si falla la carga del video
+
+  var video = document.getElementById('v');
+  var statusEl = document.getElementById('status');
+  var currentKey = null;
+
+  function status(msg) {
+    statusEl.textContent = msg || '';
+    statusEl.style.display = msg ? 'block' : 'none';
+  }
+
+  function getJSON(url, ok, fail) {
+    var xhr = new XMLHttpRequest();
+    // cache-buster: evita que la tele se quede con un config viejo
+    xhr.open('GET', url + (url.indexOf('?') < 0 ? '?' : '&') + 't=' + Date.now(), true);
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState !== 4) return;
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try { ok(JSON.parse(xhr.responseText)); } catch (e) { fail(e); }
+      } else { fail(new Error('HTTP ' + xhr.status)); }
+    };
+    xhr.send();
+  }
+
+  function play() {
+    var p = video.play();
+    if (p && p.catch) p.catch(function () { /* autoplay bloqueado: ver 'canplay' */ });
+  }
+
+  var yt = null;
+
+  function loadYouTube(id) {
+    video.pause(); video.removeAttribute('src'); video.load();
+    video.style.display = 'none';
+    if (!yt) {
+      yt = document.createElement('iframe');
+      yt.setAttribute('allow', 'autoplay; encrypted-media');
+      yt.setAttribute('frameborder', '0');
+      yt.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;border:0;';
+      document.body.appendChild(yt);
+    }
+    // loop=1 solo funciona si playlist=<mismo id>
+    yt.src = 'https://www.youtube-nocookie.com/embed/' + id +
+      '?autoplay=1&mute=1&loop=1&playlist=' + id +
+      '&controls=0&modestbranding=1&rel=0&playsinline=1';
+  }
+
+  function load(cfg) {
+    var key = (cfg.youtube || cfg.video) + '#' + (cfg.version || '');
+    if (key === currentKey) return;
+    currentKey = key;
+    status('');
+    if (cfg.youtube) { loadYouTube(cfg.youtube); return; }
+    if (yt) { yt.parentNode.removeChild(yt); yt = null; }
+    video.style.display = 'block';
+    var src = cfg.video + (cfg.video.indexOf('?') < 0 ? '?' : '&') + 'v=' + encodeURIComponent(cfg.version || '');
+    video.src = src;
+    video.load();
+    play();
+  }
+
+  function poll() {
+    getJSON(CONFIG_URL, load, function (e) {
+      if (!currentKey) status('No se pudo leer config.json (' + e.message + ')');
+    });
+  }
+
+  // Respaldo por si el navegador ignora el atributo loop
+  video.addEventListener('ended', function () { video.currentTime = 0; play(); });
+  video.addEventListener('canplay', play);
+  video.addEventListener('error', function () {
+    status('Error cargando el video, reintentando…');
+    var k = currentKey; currentKey = null;
+    setTimeout(function () { if (!currentKey) poll(); }, RETRY_MS);
+  });
+  // Si se queda congelado (red, decodificador), lo destraba
+  var lastTime = -1;
+  setInterval(function () {
+    if (yt) return;
+    if (!video.paused && video.currentTime === lastTime && video.readyState < 3) { video.load(); play(); }
+    if (video.paused && currentKey) play();
+    lastTime = video.currentTime;
+  }, 20 * 1000);
+
+  poll();
+  setInterval(poll, POLL_MS);
+})();
+</script>
+</body>
+</html>
